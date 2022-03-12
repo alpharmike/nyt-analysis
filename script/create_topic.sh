@@ -1,6 +1,6 @@
-~/kafka/bin/kafka-topics.sh \
+/home/sandman/kafka/bin/kafka-topics.sh \
 --create \
---zookeeper localhost:2181 \
---replication-factor 2 \
+--bootstrap-server localhost:9092 \
+--replication-factor 1 \
 --partitions 3 \
 --topic nyt.archive

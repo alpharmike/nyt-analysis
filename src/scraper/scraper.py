@@ -1,3 +1,4 @@
+import json
 import requests
 import logging
 from src.utils.config_parser import default_config, parse_config
@@ -8,27 +9,29 @@ logger = logging.getLogger(__name__)
 
 class ScrapeHandler:
     def __init__(self):
-        self.producer: KafkaProducer = None
+        self._producer: KafkaProducer = None
+        self._init_kafka()
 
-        self.init_kafka()
-
-    def init_kafka(self):
+    def _init_kafka(self):
         try:
-            self.producer = KafkaProducer(
+            self._producer = KafkaProducer(
                 bootstrap_servers=default_config["KAFKA"]["BOOTSTRAP_SERVERS"],
-                max_request_size=default_config["KAFKA"]["MAX_REQUEST_SIZE"],
-                buffer_memory=default_config["KAFKA"]["BUFFER_MEMORY"],
+                max_request_size=int(default_config["KAFKA"]["MAX_REQUEST_SIZE"]),
+                buffer_memory=int(default_config["KAFKA"]["BUFFER_MEMORY"]),
+                value_serializer=lambda value: json.dumps(value).encode('utf-8')
             )
         except Exception as error:
             logger.error(str(error))
 
-    def fetch_news_by_date(self, month, year):
+    def _fetch_news_by_date(self, month, year):
         try:
             secret_config = parse_config("secret")
             response = requests.get(
-                f"{default_config['NYT_API']}/{year}/{month}.json?api-key={secret_config['API']['API_KEY']}",
+                f"{default_config['NYT_API']['ARCHIVE']}/{year}/{month}.json?api-key={secret_config['API']['API_KEY']}",
+                timeout=360,
                 headers={'api-key': secret_config['API']['API_KEY']}
             )
+            print(response)
             result = response.json()
             return result
         except Exception as error:
@@ -41,7 +44,7 @@ class ScrapeHandler:
         month = start_month
         for year in range(start_year, end_year + 1):
             while month <= 12 and (year < end_year or month <= end_month):
-                data = self.fetch_news_by_date(month, year)
-                self.producer.send(default_config["KAFKA"]["ARCHIVE_TOPIC"], data)
+                data = self._fetch_news_by_date(month, year)
+                self._producer.send(default_config["KAFKA"]["ARCHIVE_TOPIC"], data)
                 month += 1
             month = month % 12
