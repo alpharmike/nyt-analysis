@@ -28,7 +28,7 @@ schema = StructType([
         ),
         True
     ),
-    StructField("pub_date", DateType(), True),
+    StructField("pub_date", TimestampType(), True),
     StructField("section_name", StringType(), True),
     StructField("subsection_name", StringType(), True),
     StructField("type_of_material", StringType(), True),
@@ -48,23 +48,32 @@ df = spark \
 parsed_data_df = df.selectExpr("CAST(value AS STRING)")
 news_df = parsed_data_df.select(from_json(col("value"), schema).alias("data")).select("data.*")
 
-concat_df = news_df.select("_id", "abstract", "lead_paragraph", col("headline.main").alias("head_main"), explode("keywords").alias("keywords"), "pub_date") \
-    .select("_id", "abstract", "lead_paragraph", "head_main", col("keywords.value").alias("keyw_value"), "pub_date") \
-    .withColumn("concat_cols", concat(col('abstract'), lit(" "), col('lead_paragraph'), lit(" "), col('head_main'), lit(" "), col('keyw_value'))) \
 
-filtered_df = concat_df.filter(
-    (lower(concat_df.concat_cols).contains("crimson")) | (lower(concat_df.concat_cols).contains("russia")) \
-    | (lower(concat_df.concat_cols).contains("nato")) | (lower(concat_df.concat_cols).contains("war"))
-)
+def filter_news():
+    concat_df = news_df.select("_id", "abstract", "lead_paragraph", col("headline.main").alias("head_main"), explode("keywords").alias("keywords"), "pub_date") \
+        .select("_id", "abstract", "lead_paragraph", "head_main", col("keywords.value").alias("keyw_value"), "pub_date") \
+        .withColumn("concat_cols", concat(col('abstract'), lit(" "), col('lead_paragraph'), lit(" "), col('head_main'), lit(" "), col('keyw_value'))) \
 
-grouped_news = filtered_df.groupBy("_id", "abstract", "lead_paragraph", "head_main", "pub_date").agg(collect_list("keyw_value").alias("keywords"))
+    filtered_df = concat_df.filter(
+        (lower(concat_df.concat_cols).contains("crimson")) | (lower(concat_df.concat_cols).contains("russia")) \
+        | (lower(concat_df.concat_cols).contains("nato")) | (lower(concat_df.concat_cols).contains("war"))
+    )
 
-grouped_news.printSchema()
-grouped_news.writeStream \
-      .format("console") \
-      .option("numRows", 20) \
-      .outputMode("complete") \
-      .start() \
-      .awaitTermination()
+    grouped_news = filtered_df.groupBy("_id", "abstract", "lead_paragraph", "head_main", "pub_date").agg(
+        collect_list("keyw_value").alias("keywords"))
 
-spark.stop()
+    return grouped_news
+
+
+def run_spark_streamer():
+    final_df = filter_news()
+    final_df.printSchema()
+
+    final_df.writeStream \
+          .format("console") \
+          .option("numRows", 20) \
+          .outputMode("complete") \
+          .start() \
+          .awaitTermination()
+
+    spark.stop()

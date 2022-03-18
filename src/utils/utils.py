@@ -37,3 +37,11 @@ def parse_input_date(date: str):
 
     except Exception as error:
         logger.error(str(error))
+
+
+def parse_date(date: str, format: str):
+    try:
+        parsed_date = datetime.strptime(date, format)
+        return parsed_date
+    except Exception as error:
+        logger.error(str(error))
