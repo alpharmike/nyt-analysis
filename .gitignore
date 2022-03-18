@@ -152,3 +152,7 @@ fabric.properties
 
 # Configs
 config/secret.ini
+
+script/start_services.sh
+script/check_services_status.sh
+script/stop_services.sh

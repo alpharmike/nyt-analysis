@@ -31,7 +31,6 @@ class ScrapeHandler:
                 timeout=360,
                 headers={'api-key': secret_config['API']['API_KEY']}
             )
-            print(response)
             result = response.json()
             return result
         except Exception as error:
@@ -45,6 +44,11 @@ class ScrapeHandler:
         for year in range(start_year, end_year + 1):
             while month <= 12 and (year < end_year or month <= end_month):
                 data = self._fetch_news_by_date(month, year)
-                self._producer.send(default_config["KAFKA"]["ARCHIVE_TOPIC"], data)
+                try:
+                    data = data["response"]["docs"]
+                    sliced_data = data[:2]
+                    self._producer.send(default_config["KAFKA"]["ARCHIVE_TOPIC"], sliced_data)
+                except Exception as error:
+                    logger.error(f"Could not parse NYT API response - ${str(error)}")
                 month += 1
             month = month % 12

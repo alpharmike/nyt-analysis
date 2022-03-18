@@ -10,7 +10,7 @@ def init():
 
 def main():
     init()
-    args = parse_args(sys.argv[1:])
+    args = parse_args(sys.argv)
     Runner.run(args.start_date, args.end_date, args.live_update)
 
 
