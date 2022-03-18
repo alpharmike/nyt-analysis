@@ -55,8 +55,8 @@ def filter_news():
         .withColumn("concat_cols", concat(col('abstract'), lit(" "), col('lead_paragraph'), lit(" "), col('head_main'), lit(" "), col('keyw_value'))) \
 
     filtered_df = concat_df.filter(
-        (lower(concat_df.concat_cols).contains("crimson")) | (lower(concat_df.concat_cols).contains("russia")) \
-        | (lower(concat_df.concat_cols).contains("nato")) | (lower(concat_df.concat_cols).contains("war"))
+        (lower(concat_df.concat_cols).contains("russia")) | (lower(concat_df.concat_cols).contains("nato")) \
+        | (lower(concat_df.concat_cols).contains("putin")) | (lower(concat_df.concat_cols).contains("war"))
     )
 
     grouped_news = filtered_df.groupBy("_id", "abstract", "lead_paragraph", "head_main", "pub_date").agg(
@@ -71,7 +71,7 @@ def run_spark_streamer():
 
     final_df.writeStream \
           .format("console") \
-          .option("numRows", 20) \
+          .option("numRows", 1000) \
           .outputMode("complete") \
           .start() \
           .awaitTermination()

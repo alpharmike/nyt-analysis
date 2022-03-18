@@ -39,6 +39,7 @@ class ScrapeHandler:
                 headers={'api-key': secret_config['API']['API_KEY']}
             )
             result = response.json()
+            logger.info(f"Fetched news for month: {month}, year: {year}")
             return result
         except Exception as error:
             logger.error(str(error))
