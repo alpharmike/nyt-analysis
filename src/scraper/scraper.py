@@ -11,11 +11,10 @@ from src.utils.config_parser import default_config, parse_config
 from src.utils.utils import parse_date
 from kafka import KafkaProducer
 
-logger = logging.getLogger(__name__)
-
 
 class ScrapeHandler:
     def __init__(self):
+        self._logger = logging.getLogger(__name__)
         self._producer: KafkaProducer = None
         self._init_kafka()
 
@@ -28,7 +27,7 @@ class ScrapeHandler:
                 value_serializer=lambda value: json.dumps(value).encode('utf-8')
             )
         except Exception as error:
-            logger.error(str(error))
+            self._logger.error(str(error))
 
     def _fetch_news_by_date(self, month, year):
         try:
@@ -39,10 +38,10 @@ class ScrapeHandler:
                 headers={'api-key': secret_config['API']['API_KEY']}
             )
             result = response.json()
-            logger.info(f"Fetched news for month: {month}, year: {year}")
+            self._logger.info(f"Fetched news for month: {month}, year: {year}")
             return result
         except Exception as error:
-            logger.error(str(error))
+            self._logger.error(str(error))
 
     def send_data_to_kafka(self, data):
         for news_doc in data:
@@ -62,7 +61,7 @@ class ScrapeHandler:
                         news_docs = data["response"]["docs"]
                         self.send_data_to_kafka(news_docs)
                     except Exception as error:
-                        logger.error(f"Could not parse NYT API response - {str(error)}")
+                        self._logger.error(f"Could not parse NYT API response - {str(error)}")
                     month += 1
                 month = month % 12
 
@@ -86,9 +85,9 @@ class ScrapeHandler:
             for news_doc in news_docs:
                 if self.validate_news_publish_date(news_doc):
                     self._producer.send(default_config["KAFKA"]["ARCHIVE_TOPIC"], news_doc)
-                    logger.info(f"News updated: Added news with id: {news_doc['_id']}")
+                    self._logger.info(f"News updated: Added news with id: {news_doc['_id']}")
         except Exception as error:
-            logger.error(f"Could not fetch live news - {str(error)}")
+            self._logger.error(f"Could not fetch live news - {str(error)}")
 
     def validate_news_publish_date(self, news_doc):
         try:
@@ -101,6 +100,6 @@ class ScrapeHandler:
                 return True
             return False
         except Exception as error:
-            logger.error(
+            self._logger.error(
                 f"Could not validate news publish - (id: {news_doc['_id']}  date: {news_doc['pub_date']}) - {str(error)}")
             return False
