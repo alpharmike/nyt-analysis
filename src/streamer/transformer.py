@@ -2,7 +2,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql import functions as func
 from pyspark.sql.types import StructType, StructField, IntegerType, LongType, StringType, MapType, ArrayType, DateType, \
     TimestampType, FloatType, DoubleType
-from pyspark.sql.functions import from_json, col, explode, lower, concat, lit, collect_list, unix_timestamp, udf, avg
+from pyspark.sql.functions import from_json, col, explode, lower, concat, lit, collect_list, unix_timestamp, udf, avg, round
 from src.utils.config_parser import default_config
 from src.streamer.preprocessor import tokenize_dataframe, remove_stopwords
 
@@ -82,13 +82,13 @@ def filter_news():
     # Find the relativity of the news
     relativity_df = cleaned_df.withColumn("relativity", relativity_strength_udf(col("cleaned")))
 
+    grouped_news = relativity_df.groupBy("_id", "abstract", "lead_paragraph", "head_main", "pub_date").agg(
+        collect_list("keyw_value").alias("keywords"), round(avg('relativity'), 2).alias('relativity'))
+
     # Filter the news based on relativity strength given the threshold
-    filtered_df = relativity_df.filter(relativity_df.relativity >= relativity_threshold)
+    filtered_df = grouped_news.filter(grouped_news.relativity >= relativity_threshold)
 
-    grouped_news = filtered_df.groupBy("_id", "abstract", "lead_paragraph", "head_main", "pub_date").agg(
-        collect_list("keyw_value").alias("keywords"), avg('relativity').alias('relativity'))
-
-    return grouped_news
+    return filtered_df
 
 
 def run_spark_streamer():
