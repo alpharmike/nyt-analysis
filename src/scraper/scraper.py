@@ -49,21 +49,22 @@ class ScrapeHandler:
             self._producer.send(default_config["KAFKA"]["ARCHIVE_TOPIC"], news_doc)
             time.sleep(1)
 
-    def fetch_news(self, start_month, start_year, end_month, end_year, live_update=False):
-        if start_month < 1 or start_month > 12 or end_month < 1 or end_month > 12 or start_month > end_month or start_year > end_year:
+    def fetch_news(self, start_month, start_year, end_month, end_year, archive=True, live_update=False):
+        if archive and (start_month < 1 or start_month > 12 or end_month < 1 or end_month > 12 or start_month > end_month or start_year > end_year):
             raise ValueError
 
-        month = start_month
-        for year in range(start_year, end_year + 1):
-            while month <= 12 and (year < end_year or month <= end_month):
-                try:
-                    data = self._fetch_news_by_date(month, year)
-                    news_docs = data["response"]["docs"]
-                    self.send_data_to_kafka(news_docs)
-                except Exception as error:
-                    logger.error(f"Could not parse NYT API response - {str(error)}")
-                month += 1
-            month = month % 12
+        if archive:
+            month = start_month
+            for year in range(start_year, end_year + 1):
+                while month <= 12 and (year < end_year or month <= end_month):
+                    try:
+                        data = self._fetch_news_by_date(month, year)
+                        news_docs = data["response"]["docs"]
+                        self.send_data_to_kafka(news_docs)
+                    except Exception as error:
+                        logger.error(f"Could not parse NYT API response - {str(error)}")
+                    month += 1
+                month = month % 12
 
         if live_update:
             self.polling_update()

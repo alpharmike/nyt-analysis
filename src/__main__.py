@@ -11,7 +11,7 @@ def init():
 def main():
     init()
     args = parse_args(sys.argv)
-    Runner.run(args.start_date, args.end_date, args.live_update)
+    Runner.run(args.start_date, args.end_date, args.archive, args.live_update)
 
 
 if __name__ == "__main__":

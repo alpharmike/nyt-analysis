@@ -3,12 +3,17 @@ from src.scraper.scraper import ScrapeHandler
 from abc import ABC, abstractmethod
 from src.utils.utils import parse_input_date
 from src.streamer.transformer import run_spark_streamer
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Runner(ABC):
 
     @staticmethod
-    def run(start_date, end_date, live_update):
+    def run(start_date, end_date, archive=True, live_update=False):
+        logger.info("Bootstrapping...")
+
         scraper: ScrapeHandler = ScrapeHandler()
         start_year, start_month = parse_input_date(start_date)
         end_year, end_month = parse_input_date(end_date)
@@ -17,6 +22,7 @@ class Runner(ABC):
             start_year,
             end_month,
             end_year,
+            archive,
             live_update
         ]
 
