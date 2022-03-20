@@ -5,13 +5,12 @@ from src.utils.utils import parse_input_date
 from src.streamer.transformer import run_spark_streamer
 import logging
 
-logger = logging.getLogger(__name__)
-
 
 class Runner(ABC):
 
     @staticmethod
     def run(start_date, end_date, archive=True, live_update=False):
+        logger = logging.getLogger(__name__)
         logger.info("Bootstrapping...")
 
         scraper: ScrapeHandler = ScrapeHandler()
