@@ -3,8 +3,11 @@ from pyspark.sql import functions as func
 from pyspark.sql.types import StructType, StructField, IntegerType, LongType, StringType, MapType, ArrayType, DateType, \
     TimestampType, FloatType, DoubleType
 from pyspark.sql.functions import from_json, col, explode, lower, concat, lit, collect_list, unix_timestamp, udf, avg, round
-from src.utils.config_parser import default_config
+from pyspark.sql.dataframe import DataFrame
+from src.utils.config_parser import default_config, parse_config
 from src.streamer.preprocessor import tokenize_dataframe, remove_stopwords
+
+db_config = parse_config("database")
 
 schema = StructType([
     StructField("_id", StringType(), True),
@@ -91,14 +94,21 @@ def filter_news():
     return filtered_df
 
 
+def store_dataframe(dataframe: DataFrame):
+    dataframe.write \
+        .format("mongo") \
+        .mode("append") \
+        .option("database", db_config["DB_NAME"]) \
+        .option("collection", db_config["DB_COLLECTION"]) \
+        .save()
+
+
 def run_spark_streamer():
     final_df = filter_news()
     final_df.printSchema()
 
     final_df.writeStream \
-        .format("console") \
-        .option("numRows", 1000) \
-        .outputMode("complete") \
+        .foreachBatch(store_dataframe) \
         .start() \
         .awaitTermination()
 
