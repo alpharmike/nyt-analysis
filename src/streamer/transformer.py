@@ -44,16 +44,16 @@ spark = SparkSession.builder.appName("NYT Streamer").getOrCreate()
 df = spark \
     .readStream \
     .format("kafka") \
-    .option("kafka.bootstrap.servers", 'broker:29092') \
+    .option("kafka.bootstrap.servers", default_config["KAFKA"]["BOOTSTRAP_SERVERS"]) \
     .option("subscribe", default_config["KAFKA"]["ARCHIVE_TOPIC"]) \
-    .option("startingOffsets", "earliest") \
+    .option("startingOffsets", "latest") \
     .load()
 
 parsed_data_df = df.selectExpr("CAST(value AS STRING)")
 news_df = parsed_data_df.select(from_json(col("value"), schema).alias("data")).select("data.*")
 
 target_words = ["russia", "putin", "nato", "war", "ukraine"]
-relativity_threshold = 0.6
+relativity_threshold = 0.2
 
 
 def udf_typed(return_type=StringType()):
@@ -111,7 +111,6 @@ def run_spark_streamer():
         .format("console") \
         .option("numRows", 1000) \
         .outputMode("complete") \
-        .foreachBatch(store_dataframe) \
         .start() \
         .awaitTermination()
 
