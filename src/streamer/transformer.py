@@ -98,6 +98,7 @@ def store_dataframe(dataframe: DataFrame):
     dataframe.write \
         .format("mongo") \
         .mode("append") \
+        .option("uri", f"{db_config['MONGO']['URI']}") \
         .option("database", db_config["DB_NAME"]) \
         .option("collection", db_config["DB_COLLECTION"]) \
         .save()
@@ -108,9 +109,7 @@ def run_spark_streamer():
     final_df.printSchema()
 
     final_df.writeStream \
-        .format("console") \
-        .option("numRows", 1000) \
-        .outputMode("complete") \
+        .foreachBatch(store_dataframe) \
         .start() \
         .awaitTermination()
 

@@ -1,4 +1,5 @@
 from src.utils.logger import init_logger
+from src.utils.database import init_db
 from src.core.runner import Runner
 from src.utils.utils import parse_args
 import sys
@@ -6,6 +7,7 @@ import sys
 
 def init():
     init_logger()
+    init_db()
 
 
 def main():
