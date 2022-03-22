@@ -44,7 +44,7 @@ spark = SparkSession.builder.appName("NYT Streamer").getOrCreate()
 df = spark \
     .readStream \
     .format("kafka") \
-    .option("kafka.bootstrap.servers", default_config["KAFKA"]["BOOTSTRAP_SERVERS"]) \
+    .option("kafka.bootstrap.servers", 'broker:29092') \
     .option("subscribe", default_config["KAFKA"]["ARCHIVE_TOPIC"]) \
     .option("startingOffsets", "earliest") \
     .load()
@@ -108,6 +108,9 @@ def run_spark_streamer():
     final_df.printSchema()
 
     final_df.writeStream \
+        .format("console") \
+        .option("numRows", 1000) \
+        .outputMode("complete") \
         .foreachBatch(store_dataframe) \
         .start() \
         .awaitTermination()
