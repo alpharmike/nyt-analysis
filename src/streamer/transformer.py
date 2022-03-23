@@ -39,7 +39,10 @@ schema = StructType([
 ])
 
 # Create a SparkSession
-spark = SparkSession.builder.appName("NYT Streamer").getOrCreate()
+spark = SparkSession.builder \
+    .appName("NYT Streamer") \
+    .config("spark.mongodb.output.uri", f"{db_config['MONGO']['URI']}/{db_config['MONGO']['DB_NAME']}.{db_config['MONGO']['DB_COLLECTION']}") \
+    .getOrCreate()
 
 df = spark \
     .readStream \
@@ -53,7 +56,7 @@ parsed_data_df = df.selectExpr("CAST(value AS STRING)")
 news_df = parsed_data_df.select(from_json(col("value"), schema).alias("data")).select("data.*")
 
 target_words = ["russia", "putin", "nato", "war", "ukraine"]
-relativity_threshold = 0.2
+relativity_threshold = 0.0
 
 
 def udf_typed(return_type=StringType()):
@@ -85,8 +88,11 @@ def filter_news():
     # Find the relativity of the news
     relativity_df = cleaned_df.withColumn("relativity", relativity_strength_udf(col("cleaned")))
 
-    grouped_news = relativity_df.groupBy("_id", "abstract", "lead_paragraph", "head_main", "pub_date").agg(
-        collect_list("keyw_value").alias("keywords"), round(avg('relativity'), 2).alias('relativity'))
+    grouped_news = relativity_df \
+        .withColumn('timestamp', unix_timestamp(col('pub_date'), "MM/dd/yyyy hh:mm:ss aa").cast(TimestampType())) \
+        .withWatermark("timestamp", "1 minutes") \
+        .groupBy("_id", "abstract", "lead_paragraph", "head_main", "pub_date", "timestamp") \
+        .agg(collect_list("keyw_value").alias("keywords"), round(avg('relativity'), 2).alias('relativity'))
 
     # Filter the news based on relativity strength given the threshold
     filtered_df = grouped_news.filter(grouped_news.relativity >= relativity_threshold)
@@ -94,13 +100,13 @@ def filter_news():
     return filtered_df
 
 
-def store_dataframe(dataframe: DataFrame):
+def store_dataframe(dataframe: DataFrame, batch_id: int):
     dataframe.write \
         .format("mongo") \
         .mode("append") \
         .option("uri", f"{db_config['MONGO']['URI']}") \
-        .option("database", db_config["DB_NAME"]) \
-        .option("collection", db_config["DB_COLLECTION"]) \
+        .option("database", db_config["MONGO"]["DB_NAME"]) \
+        .option("collection", db_config["MONGO"]["DB_COLLECTION"]) \
         .save()
 
 
