@@ -2,6 +2,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from src.scraper.scraper import ScrapeHandler
 from abc import ABC, abstractmethod
 from src.utils.utils import parse_input_date
+from src.utils.globals import database
 from src.streamer.transformer import run_spark_streamer
 import logging
 
@@ -28,6 +29,12 @@ class Runner(ABC):
         scheduler = BackgroundScheduler()
         # Run date (run_date) is set to now if not provided
         scheduler.add_job(scraper.fetch_news, 'date', args=arguments, misfire_grace_time=None)
+        scheduler.start()
+
+        # Check for changes to database in background
+        scheduler = BackgroundScheduler()
+        # Run date (run_date) is set to now if not provided
+        scheduler.add_job(database.watch_for_change, 'date', args=[], misfire_grace_time=None)
         scheduler.start()
 
         # Initialize and run spark streamer
