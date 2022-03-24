@@ -37,8 +37,8 @@ RUN wget https://repo1.maven.org/maven2/org/apache/kafka/kafka-clients/2.8.0/kaf
     wget https://repo1.maven.org/maven2/org/apache/spark/spark-streaming-kafka-0-10_2.12/3.2.1/spark-streaming-kafka-0-10_2.12-3.2.1.jar && \
     wget https://repo1.maven.org/maven2/org/apache/spark/spark-sql-kafka-0-10_2.12/3.2.1/spark-sql-kafka-0-10_2.12-3.2.1.jar && \
     wget https://repo1.maven.org/maven2/org/mongodb/spark/mongo-spark-connector_2.12/3.0.1/mongo-spark-connector_2.12-3.0.1.jar && \
-    wget https://repo1.maven.org/maven2/org/mongodb/mongodb-driver-sync/4.0.5/mongodb-driver-sync-4.0.5.jar && \
-    wget https://repo1.maven.org/maven2/org/mongodb/mongodb-driver-core/4.0.5/mongodb-driver-core-4.0.5.jar && \
+    wget https://repo1.maven.org/maven2/org/mongodb/mongodb-driver-sync/4.5.0/mongodb-driver-sync-4.5.0.jar && \
+    wget https://repo1.maven.org/maven2/org/mongodb/mongodb-driver-core/4.5.0/mongodb-driver-core-4.5.0.jar && \
     wget https://repo1.maven.org/maven2/org/mongodb/mongo-java-driver/3.12.10/mongo-java-driver-3.12.10.jar && \
     wget https://repo1.maven.org/maven2/org/mongodb/bson/4.5.0/bson-4.5.0.jar
 
